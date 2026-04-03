@@ -7,8 +7,9 @@ build-backend = "maturin"
 name = "pyforge-django"
 version = "0.1.0"
 description = "Rust-accelerated Django serialization, validation, and field mapping"
+readme = "README.md"
 authors = [{ name = "Abdulwahed Mansour" }]
-license = { text = "MIT OR Apache-2.0" }
+license = { text = "MIT" }
 requires-python = ">=3.11"
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -18,7 +19,6 @@ classifiers = [
     "Framework :: Django :: 5.1",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
-    "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -29,10 +29,17 @@ dependencies = [
     "django>=4.2",
 ]
 
+[project.urls]
+Homepage = "https://github.com/abdulwahed-sweden/pyforge"
+Repository = "https://github.com/abdulwahed-sweden/pyforge"
+Documentation = "https://github.com/abdulwahed-sweden/pyforge#readme"
+
 [project.optional-dependencies]
 drf = ["djangorestframework>=3.14"]
 dev = ["pytest>=7.0", "pytest-django>=4.5"]
 
 [tool.maturin]
+# Build from the workspace root so Rust can find all workspace dependencies
+manifest-path = "Cargo.toml"
 python-source = "."
 module-name = "pyforge_django"
