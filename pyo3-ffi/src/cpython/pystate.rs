@@ -32,11 +32,7 @@ pub const PyTrace_OPCODE: c_int = 7;
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub(crate) struct _PyErr_StackItem {
-    #[cfg(not(Py_3_11))]
-    exc_type: *mut PyObject,
     exc_value: *mut PyObject,
-    #[cfg(not(Py_3_11))]
-    exc_traceback: *mut PyObject,
     previous_item: *mut _PyErr_StackItem,
 }
 
@@ -52,9 +48,7 @@ extern_libpython! {
     #[cfg(not(Py_3_13))]
     pub(crate) fn _PyThreadState_UncheckedGet() -> *mut PyThreadState;
 
-    #[cfg(Py_3_11)]
     pub fn PyThreadState_EnterTracing(state: *mut PyThreadState);
-    #[cfg(Py_3_11)]
     pub fn PyThreadState_LeaveTracing(state: *mut PyThreadState);
 
     #[cfg_attr(PyPy, link_name = "PyPyGILState_Check")]

@@ -3,10 +3,6 @@ use std::ffi::c_int;
 extern_libpython! {
     #[cfg_attr(PyPy, link_name = "PyPyOS_InterruptOccurred")]
     pub fn PyOS_InterruptOccurred() -> c_int;
-    #[cfg(not(Py_3_10))]
-    #[deprecated(note = "Not documented in Python API; see Python 3.10 release notes")]
-    pub fn PyOS_InitInterrupts();
-
     pub fn PyOS_BeforeFork();
     pub fn PyOS_AfterFork_Parent();
     pub fn PyOS_AfterFork_Child();

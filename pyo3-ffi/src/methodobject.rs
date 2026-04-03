@@ -1,10 +1,9 @@
 use crate::object::{PyObject, PyTypeObject, Py_TYPE};
-#[cfg(Py_3_9)]
 use crate::PyObject_TypeCheck;
 use std::ffi::{c_char, c_int, c_void};
 use std::{mem, ptr};
 
-#[cfg(all(Py_3_9, not(Py_LIMITED_API), not(GraalPy)))]
+#[cfg(all(not(Py_LIMITED_API), not(GraalPy)))]
 pub struct PyCFunctionObject {
     pub ob_base: PyObject,
     pub m_ml: *mut PyMethodDef,
@@ -20,22 +19,14 @@ extern_libpython! {
     pub static mut PyCFunction_Type: PyTypeObject;
 }
 
-#[cfg(Py_3_9)]
 #[inline]
 pub unsafe fn PyCFunction_CheckExact(op: *mut PyObject) -> c_int {
     (Py_TYPE(op) == &raw mut PyCFunction_Type) as c_int
 }
 
-#[cfg(Py_3_9)]
 #[inline]
 pub unsafe fn PyCFunction_Check(op: *mut PyObject) -> c_int {
     PyObject_TypeCheck(op, &raw mut PyCFunction_Type)
-}
-
-#[cfg(not(Py_3_9))]
-#[inline]
-pub unsafe fn PyCFunction_Check(op: *mut PyObject) -> c_int {
-    (Py_TYPE(op) == &raw mut PyCFunction_Type) as c_int
 }
 
 pub type PyCFunction =
@@ -70,7 +61,7 @@ pub type PyCFunctionFastWithKeywords = unsafe extern "C" fn(
 #[deprecated(note = "renamed to `PyCFunctionFastWithKeywords`")]
 pub type _PyCFunctionFastWithKeywords = PyCFunctionFastWithKeywords;
 
-#[cfg(all(Py_3_9, not(Py_LIMITED_API)))]
+#[cfg(not(Py_LIMITED_API))]
 pub type PyCMethod = unsafe extern "C" fn(
     slf: *mut PyObject,
     defining_class: *mut PyTypeObject,
@@ -85,7 +76,7 @@ extern_libpython! {
     pub fn PyCFunction_GetSelf(f: *mut PyObject) -> *mut PyObject;
     pub fn PyCFunction_GetFlags(f: *mut PyObject) -> c_int;
     #[cfg(not(Py_3_13))]
-    #[cfg_attr(Py_3_9, deprecated(note = "Python 3.9"))]
+    #[deprecated(note = "Python 3.9")]
     pub fn PyCFunction_Call(
         f: *mut PyObject,
         args: *mut PyObject,
@@ -169,7 +160,7 @@ pub union PyMethodDefPointer {
     pub PyCFunctionFastWithKeywords: PyCFunctionFastWithKeywords,
 
     /// This variant corresponds with [`METH_METHOD`] | [`METH_FASTCALL`] | [`METH_KEYWORDS`].
-    #[cfg(all(Py_3_9, not(Py_LIMITED_API)))]
+    #[cfg(not(Py_LIMITED_API))]
     pub PyCMethod: PyCMethod,
 
     Void: *mut c_void,
@@ -207,26 +198,11 @@ impl std::fmt::Pointer for PyMethodDefPointer {
 const _: () =
     assert!(mem::size_of::<PyMethodDefPointer>() == mem::size_of::<Option<extern "C" fn()>>());
 
-#[cfg(not(Py_3_9))]
-extern_libpython! {
-    #[cfg_attr(PyPy, link_name = "PyPyCFunction_New")]
-    pub fn PyCFunction_New(ml: *mut PyMethodDef, slf: *mut PyObject) -> *mut PyObject;
-
-    #[cfg_attr(PyPy, link_name = "PyPyCFunction_NewEx")]
-    pub fn PyCFunction_NewEx(
-        ml: *mut PyMethodDef,
-        slf: *mut PyObject,
-        module: *mut PyObject,
-    ) -> *mut PyObject;
-}
-
-#[cfg(Py_3_9)]
 #[inline]
 pub unsafe fn PyCFunction_New(ml: *mut PyMethodDef, slf: *mut PyObject) -> *mut PyObject {
     PyCFunction_NewEx(ml, slf, std::ptr::null_mut())
 }
 
-#[cfg(Py_3_9)]
 #[inline]
 pub unsafe fn PyCFunction_NewEx(
     ml: *mut PyMethodDef,
@@ -236,7 +212,6 @@ pub unsafe fn PyCFunction_NewEx(
     PyCMethod_New(ml, slf, module, std::ptr::null_mut())
 }
 
-#[cfg(Py_3_9)]
 extern_libpython! {
     #[cfg_attr(PyPy, link_name = "PyPyCMethod_New")]
     pub fn PyCMethod_New(
@@ -274,10 +249,6 @@ pub const METH_FASTCALL: c_int = 0x0080;
 
 // skipped METH_STACKLESS
 
-#[cfg(all(Py_3_9, not(Py_LIMITED_API)))]
+#[cfg(not(Py_LIMITED_API))]
 pub const METH_METHOD: c_int = 0x0200;
 
-extern_libpython! {
-    #[cfg(not(Py_3_9))]
-    pub fn PyCFunction_ClearFreeList() -> c_int;
-}

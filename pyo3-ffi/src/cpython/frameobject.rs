@@ -46,6 +46,4 @@ extern_libpython! {
 
     // skipped _PyFrame_DebugMallocStats
 
-    #[cfg(not(Py_3_9))]
-    pub fn PyFrame_ClearFreeList() -> c_int;
 }

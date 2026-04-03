@@ -8,10 +8,6 @@ use std::ffi::c_int;
 #[repr(C)]
 pub struct PyGenObject {
     pub ob_base: PyObject,
-    #[cfg(not(Py_3_11))]
-    pub gi_frame: *mut PyFrameObject,
-    #[cfg(not(Py_3_10))]
-    pub gi_running: c_int,
     #[cfg(not(Py_3_12))]
     pub gi_code: *mut PyObject,
     pub gi_weakreflist: *mut PyObject,
