@@ -50,15 +50,13 @@ macro_rules! compat_function {
     };
 }
 
-mod py_3_10;
+// PyForge: pre-3.11 compat shims removed (py_3_9.rs, py_3_10.rs)
+// Only 3.13+ forward-compat shims remain.
 mod py_3_13;
 mod py_3_14;
 mod py_3_15;
-mod py_3_9;
 
-pub use self::py_3_10::*;
 pub use self::py_3_13::*;
 pub use self::py_3_14::*;
 #[allow(unused_imports)]
 pub use self::py_3_15::*;
-pub use self::py_3_9::*;

@@ -9,7 +9,7 @@ pyo3-ffi-check-definitions = { path = "definitions" }
 pyo3-ffi-check-macro = { path = "macro" }
 
 [build-dependencies]
-pyo3-build-config = { path = "../pyo3-build-config" }
+pyo3-build-config = { path = "../pyo3-build-config", package = "pyforge-build-config" }
 
 [workspace]
 members = [

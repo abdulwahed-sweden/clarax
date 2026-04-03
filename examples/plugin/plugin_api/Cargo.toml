@@ -9,4 +9,4 @@ name = "plugin_api"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-pyo3 = { path = "../../../" }
+pyo3 = { path = "../../../", package = "pyforge" }

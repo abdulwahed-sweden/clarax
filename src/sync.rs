@@ -12,7 +12,7 @@
 use crate::{
     internal::state::SuspendAttach,
     sealed::Sealed,
-    types::{PyAny, PyString},
+    types::PyString,
     Bound, Py, Python,
 };
 use std::{
@@ -25,35 +25,9 @@ use std::{
 pub mod critical_section;
 pub(crate) mod once_lock;
 
-/// Deprecated alias for [`pyo3::sync::critical_section::with_critical_section`][crate::sync::critical_section::with_critical_section]
-#[deprecated(
-    since = "0.28.0",
-    note = "use pyo3::sync::critical_section::with_critical_section instead"
-)]
-pub fn with_critical_section<F, R>(object: &Bound<'_, PyAny>, f: F) -> R
-where
-    F: FnOnce() -> R,
-{
-    crate::sync::critical_section::with_critical_section(object, f)
-}
-
-/// Deprecated alias for [`pyo3::sync::critical_section::with_critical_section2`][crate::sync::critical_section::with_critical_section2]
-#[deprecated(
-    since = "0.28.0",
-    note = "use pyo3::sync::critical_section::with_critical_section2 instead"
-)]
-pub fn with_critical_section2<F, R>(a: &Bound<'_, PyAny>, b: &Bound<'_, PyAny>, f: F) -> R
-where
-    F: FnOnce() -> R,
-{
-    crate::sync::critical_section::with_critical_section2(a, b, f)
-}
 pub use self::once_lock::PyOnceLock;
 
-#[deprecated(
-    since = "0.26.0",
-    note = "Now internal only, to be removed after https://github.com/PyO3/pyo3/pull/5341"
-)]
+/// Internal-only cell used by LazyTypeObject. Not part of public API.
 pub(crate) struct GILOnceCell<T> {
     once: Once,
     data: UnsafeCell<MaybeUninit<T>>,
@@ -82,7 +56,6 @@ pub(crate) struct GILOnceCell<T> {
     _marker: PhantomData<T>,
 }
 
-#[allow(deprecated)]
 impl<T> Default for GILOnceCell<T> {
     fn default() -> Self {
         Self::new()
@@ -92,12 +65,9 @@ impl<T> Default for GILOnceCell<T> {
 // T: Send is needed for Sync because the thread which drops the GILOnceCell can be different
 // to the thread which fills it. (e.g. think scoped thread which fills the cell and then exits,
 // leaving the cell to be dropped by the main thread).
-#[allow(deprecated)]
 unsafe impl<T: Send + Sync> Sync for GILOnceCell<T> {}
-#[allow(deprecated)]
 unsafe impl<T: Send> Send for GILOnceCell<T> {}
 
-#[allow(deprecated)]
 impl<T> GILOnceCell<T> {
     /// Create a `GILOnceCell` which does not yet contain a value.
     pub const fn new() -> Self {
@@ -179,7 +149,6 @@ impl<T> GILOnceCell<T> {
     }
 }
 
-#[allow(deprecated)]
 impl<T> Drop for GILOnceCell<T> {
     fn drop(&mut self) {
         if self.once.is_completed() {
@@ -763,7 +732,6 @@ mod tests {
     }
 
     #[test]
-    #[allow(deprecated)]
     fn test_once_cell() {
         Python::attach(|py| {
             let cell = GILOnceCell::new();
@@ -781,7 +749,6 @@ mod tests {
     }
 
     #[test]
-    #[allow(deprecated)]
     fn test_once_cell_drop() {
         #[derive(Debug)]
         struct RecordDrop<'a>(&'a mut bool);

@@ -414,7 +414,6 @@ pub mod buffer;
 pub mod call;
 pub mod conversion;
 mod conversions;
-#[cfg(feature = "experimental-async")]
 pub mod coroutine;
 mod err;
 pub mod exceptions;

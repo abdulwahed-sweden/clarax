@@ -1,16 +1,16 @@
 [package]
 name = "pyo3-benches"
 version = "0.1.0"
-description = "In-tree benchmarks for the PyO3 project"
-authors = ["PyO3 Project and Contributors <https://github.com/PyO3>"]
+description = "In-tree benchmarks for the PyForge project"
+authors = ["Abdulwahed Mansour"]
 edition = "2021"
 publish = false
 
 [dependencies]
-pyo3 = { path = "../", features = ["auto-initialize", "full"] }
+pyo3 = { path = "../", package = "pyforge", features = ["auto-initialize", "full"] }
 
 [build-dependencies]
-pyo3-build-config = { path = "../pyo3-build-config" }
+pyo3-build-config = { path = "../pyo3-build-config", package = "pyforge-build-config" }
 
 [dev-dependencies]
 codspeed-criterion-compat = "4.0"
@@ -20,7 +20,7 @@ rust_decimal = { version = "1.0.0", default-features = false }
 hashbrown = "0.16"
 
 [features]
-abi3 = ["pyo3-build-config/abi3"]
+abi3 = ["pyo3/abi3"]
 
 [[bench]]
 name = "bench_any"

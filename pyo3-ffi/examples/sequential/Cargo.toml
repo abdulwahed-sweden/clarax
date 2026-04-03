@@ -9,9 +9,9 @@ name = "sequential"
 crate-type = ["cdylib", "lib"]
 
 [dependencies]
-pyo3-ffi = { path = "../../" }
+pyo3-ffi = { path = "../../", package = "pyforge-ffi" }
 
 [build-dependencies]
-pyo3-build-config = { path = "../../../pyo3-build-config" }
+pyo3-build-config = { path = "../../../pyo3-build-config", package = "pyforge-build-config" }
 
 [workspace]

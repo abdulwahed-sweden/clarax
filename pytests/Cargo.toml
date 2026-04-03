@@ -1,8 +1,8 @@
 [package]
-authors = ["PyO3 Authors"]
+authors = ["Abdulwahed Mansour"]
 name = "pyo3-pytests"
 version = "0.1.0"
-description = "Python-based tests for PyO3"
+description = "Python-based tests for PyForge"
 edition = "2021"
 publish = false
 rust-version = "1.83"
@@ -12,10 +12,10 @@ experimental-async = ["pyo3/experimental-async"]
 experimental-inspect = ["pyo3/experimental-inspect"]
 
 [dependencies]
-pyo3.path = "../"
+pyo3 = { path = "../", package = "pyforge" }
 
 [build-dependencies]
-pyo3-build-config = { path = "../pyo3-build-config" }
+pyo3-build-config = { path = "../pyo3-build-config", package = "pyforge-build-config" }
 
 [lib]
 name = "pyo3_pytests"

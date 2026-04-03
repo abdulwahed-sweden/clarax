@@ -5,8 +5,8 @@ edition = "2021"
 publish = false
 
 [dependencies]
-pyo3-ffi = { path = "../../pyo3-ffi" }
+pyo3-ffi = { path = "../../pyo3-ffi", package = "pyforge-ffi" }
 
 [build-dependencies]
 bindgen = "0.72"
-pyo3-build-config = { path = "../../pyo3-build-config" }
+pyo3-build-config = { path = "../../pyo3-build-config", package = "pyforge-build-config" }

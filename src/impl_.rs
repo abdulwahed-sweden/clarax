@@ -8,7 +8,6 @@
 
 pub mod callback;
 pub mod concat;
-#[cfg(feature = "experimental-async")]
 pub mod coroutine;
 pub mod deprecated;
 pub mod exceptions;

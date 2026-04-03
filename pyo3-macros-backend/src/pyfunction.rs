@@ -423,12 +423,7 @@ pub fn impl_wrap_pyfunction(
     let introspection_id = quote! {};
 
     let wrapper_ident = format_ident!("__pyfunction_{}", spec.name);
-    if spec.asyncness.is_some() {
-        ensure_spanned!(
-            cfg!(feature = "experimental-async"),
-            spec.asyncness.span() => "async functions are only supported with the `experimental-async` feature"
-        );
-    }
+    // PyForge: async support is always enabled (no feature gate required)
     let calling_convention = CallingConvention::from_signature(&spec.signature);
     let wrapper = spec.get_wrapper_function(&wrapper_ident, None, calling_convention, ctx)?;
     let methoddef = spec.get_methoddef(

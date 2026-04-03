@@ -243,12 +243,7 @@ pub fn gen_py_method(
 ) -> Result<GeneratedPyMethod> {
     let spec = &method.spec;
 
-    if spec.asyncness.is_some() {
-        ensure_spanned!(
-            cfg!(feature = "experimental-async"),
-            spec.asyncness.span() => "async functions are only supported with the `experimental-async` feature"
-        );
-    }
+    // PyForge: async support is always enabled (no feature gate required)
 
     Ok(match (method.kind, &spec.tp) {
         // Class attributes go before protos so that class attributes can be used to set proto

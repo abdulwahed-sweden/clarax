@@ -9,6 +9,6 @@ name = "setuptools_rust_starter"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { path = "../../" }
+pyo3 = { path = "../../", package = "pyforge" }
 
 [workspace]

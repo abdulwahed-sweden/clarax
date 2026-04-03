@@ -9,7 +9,7 @@ name = "word_count"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { path = "../.." }
+pyo3 = { path = "../..", package = "pyforge" }
 rayon = "1.0.2"
 
 [workspace]

@@ -9,9 +9,9 @@ name = "maturin_starter"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { path = "../../" }
+pyo3 = { path = "../../", package = "pyforge" }
 
 [features]
-abi3 = ["pyo3/abi3-py38"]
+abi3 = ["pyo3/abi3-py311"]
 
 [workspace]

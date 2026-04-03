@@ -25,23 +25,8 @@ use crate::{
     warn,
 };
 
-/// Minimum Python version PyO3 supports.
-pub(crate) const MINIMUM_SUPPORTED_VERSION: PythonVersion = PythonVersion { major: 3, minor: 8 };
-
-pub(crate) const MINIMUM_SUPPORTED_VERSION_PYPY: PythonVersion = PythonVersion {
-    major: 3,
-    minor: 11,
-};
-pub(crate) const MAXIMUM_SUPPORTED_VERSION_PYPY: PythonVersion = PythonVersion {
-    major: 3,
-    minor: 11,
-};
-
-/// GraalPy may implement the same CPython version over multiple releases.
-const MINIMUM_SUPPORTED_VERSION_GRAALPY: PythonVersion = PythonVersion {
-    major: 25,
-    minor: 0,
-};
+/// Minimum Python version PyForge supports (CPython only).
+pub(crate) const MINIMUM_SUPPORTED_VERSION: PythonVersion = PythonVersion { major: 3, minor: 11 };
 
 /// Maximum Python version that can be used as minimum required Python version with abi3.
 pub(crate) const ABI3_MAX_MINOR: u8 = 14;
@@ -178,19 +163,20 @@ pub struct InterpreterConfig {
 impl InterpreterConfig {
     #[doc(hidden)]
     pub fn build_script_outputs(&self) -> Vec<String> {
-        // This should have been checked during pyo3-build-config build time.
-        assert!(self.version >= MINIMUM_SUPPORTED_VERSION);
+        // PyForge: CPython 3.11+ only
+        assert!(self.version >= MINIMUM_SUPPORTED_VERSION,
+            "PyForge requires CPython 3.11 or newer, found {}.{}",
+            self.version.major, self.version.minor);
+        assert!(self.implementation == PythonImplementation::CPython,
+            "PyForge only supports CPython. PyPy and GraalPy are not supported.");
 
         let mut out = vec![];
 
-        for i in MINIMUM_SUPPORTED_VERSION.minor..=self.version.minor {
+        // Emit cfg flags for all Python versions up to the detected version.
+        // These flags mean "feature available from this version onward", not "minimum supported".
+        // We start from 8 because FFI code uses Py_3_8, Py_3_9 etc. as feature gates.
+        for i in 8..=self.version.minor {
             out.push(format!("cargo:rustc-cfg=Py_3_{i}"));
-        }
-
-        match self.implementation {
-            PythonImplementation::CPython => {}
-            PythonImplementation::PyPy => out.push("cargo:rustc-cfg=PyPy".to_owned()),
-            PythonImplementation::GraalPy => out.push("cargo:rustc-cfg=GraalPy".to_owned()),
         }
 
         // If Py_GIL_DISABLED is set, do not build with limited API support
@@ -280,22 +266,11 @@ print("gil_disabled", get_config_var("Py_GIL_DISABLED"))
             interpreter.as_ref().display()
         );
 
-        if let Some(value) = map.get("graalpy_major") {
-            let graalpy_version = PythonVersion {
-                major: value
-                    .parse()
-                    .context("failed to parse GraalPy major version")?,
-                minor: map["graalpy_minor"]
-                    .parse()
-                    .context("failed to parse GraalPy minor version")?,
-            };
-            ensure!(
-                graalpy_version >= MINIMUM_SUPPORTED_VERSION_GRAALPY,
-                "At least GraalPy version {} needed, got {}",
-                MINIMUM_SUPPORTED_VERSION_GRAALPY,
-                graalpy_version
-            );
-        };
+        // PyForge: reject GraalPy — only CPython is supported
+        ensure!(
+            !map.contains_key("graalpy_major"),
+            "PyForge only supports CPython. GraalPy is not supported."
+        );
 
         let shared = map["shared"].as_str() == "True";
         let python_framework_prefix = map.get("python_framework_prefix").cloned();

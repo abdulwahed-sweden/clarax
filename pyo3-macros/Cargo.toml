@@ -1,11 +1,11 @@
 [package]
-name = "pyo3-macros"
-version = "0.28.3"
-description = "Proc macros for PyO3 package"
-authors = ["PyO3 Project and Contributors <https://github.com/PyO3>"]
-keywords = ["pyo3", "python", "cpython", "ffi"]
-homepage = "https://github.com/pyo3/pyo3"
-repository = "https://github.com/pyo3/pyo3"
+name = "pyforge-macros"
+version = "0.30.0"
+description = "Proc macros for PyForge — modern Python-Rust bindings"
+authors = ["Abdulwahed Mansour"]
+keywords = ["pyforge", "python", "cpython", "ffi"]
+homepage = "https://github.com/abdulwahed-sweden/pyforge"
+repository = "https://github.com/abdulwahed-sweden/pyforge"
 categories = ["api-bindings", "development-tools::ffi"]
 license = "MIT OR Apache-2.0"
 edition = "2021"
@@ -23,7 +23,7 @@ experimental-inspect = ["pyo3-macros-backend/experimental-inspect"]
 proc-macro2 = { version = "1.0.60", default-features = false }
 quote = "1"
 syn = { version = "2", features = ["full", "extra-traits"] }
-pyo3-macros-backend = { path = "../pyo3-macros-backend", version = "=0.28.3" }
+pyo3-macros-backend = { path = "../pyo3-macros-backend", version = "=0.30.0", package = "pyforge-macros-backend" }
 
 [lints]
 workspace = true
