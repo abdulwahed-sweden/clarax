@@ -30,3 +30,4 @@ netlify_build/
 .vscode/
 .lycheecache
 .DS_Store
+.venv/
