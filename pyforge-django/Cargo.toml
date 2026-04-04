@@ -1,7 +1,7 @@
 # Author: Abdulwahed Mansour
 [package]
 name = "pyforge-django"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["Abdulwahed Mansour"]
 description = "High-performance Django integration layer — Rust-accelerated serialization, validation, and field mapping for Django 5.x+"

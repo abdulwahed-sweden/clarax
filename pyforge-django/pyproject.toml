@@ -5,7 +5,7 @@ build-backend = "maturin"
 
 [project]
 name = "pyforge-django"
-version = "0.1.0"
+version = "0.1.1"
 description = "Rust-accelerated Django serialization, validation, and field mapping"
 readme = "README.md"
 authors = [{ name = "Abdulwahed Mansour" }]
