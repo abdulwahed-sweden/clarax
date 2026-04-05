@@ -1,47 +1,69 @@
 # pyforge-core
 
-Rust-accelerated serialization and validation for Python. Framework-agnostic.
+Rust-accelerated serialization and validation for any Python project. No framework required.
 
-## Installation
+## Install
 
 ```bash
 pip install pyforge-core
 ```
 
-## Quick Start
+## Quickstart
 
 ```python
-from pyforge_core import Schema, Field, serialize, validate
+from dataclasses import dataclass
+from pyforge_core import from_dataclass, serialize, validate
+
+@dataclass
+class User:
+    name: str
+    age: int
+    email: str
+
+schema = from_dataclass(User)
+result = serialize({"name": "Erik", "age": 30, "email": "erik@x.com"}, schema)
+report = validate({"name": "Erik", "age": -5, "email": "erik@x.com"}, schema)
+```
+
+## Manual Schema
+
+```python
+from pyforge_core import Schema, Field
 from decimal import Decimal
-from datetime import datetime
-from uuid import UUID
 
 schema = Schema({
     "name": Field(str, max_length=100),
-    "age": Field(int, min_value=0, max_value=150),
-    "salary": Field(Decimal, max_digits=10, decimal_places=2),
-    "joined": Field(datetime),
-    "id": Field(UUID),
+    "price": Field(Decimal, max_digits=10, decimal_places=2),
     "active": Field(bool),
 })
-
-data = {
-    "name": "Erik",
-    "age": 30,
-    "salary": Decimal("52000.00"),
-    "joined": datetime(2025, 1, 15, 10, 30),
-    "id": UUID("12345678-1234-5678-1234-567812345678"),
-    "active": True,
-}
-
-result = serialize(data, schema)
-report = validate(data, schema)
 ```
 
-## Requirements
+## Supported Types
 
-- Python 3.11+
-- No framework dependencies
+| Type | Constraints |
+|---|---|
+| `str` | `max_length`, `min_length` |
+| `int` | `min_value`, `max_value` |
+| `float` | `min_value`, `max_value` |
+| `bool` | — |
+| `Decimal` | `max_digits`, `decimal_places` |
+| `datetime` | — |
+| `date` | — |
+| `time` | — |
+| `UUID` | — |
+| `list` | — |
+| `dict` | — |
+| `bytes` | `max_length` |
+
+All types accept `nullable=True` and `default=True`.
+
+Invalid constraints raise `SchemaError` immediately: `Field(int, max_length=100)` fails at definition time.
+
+## When to Use
+
+Flask, FastAPI, scripts, ETL pipelines, data validation — any Python code that processes structured data.
+
+For Django projects, use [`pyforge-django`](https://pypi.org/project/pyforge-django/) which adds `ModelSchema`, `RustSerializerMixin`, and automatic Django model introspection on top of pyforge-core.
 
 ## License
 

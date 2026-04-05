@@ -5,6 +5,24 @@ All notable changes to PyForge will be documented here.
 Format: [keepachangelog.com](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] — 2026-04-05
+
+### Added
+- `serialize_values_list()` — accepts `QuerySet.values_list()` output directly, single Python-Rust bridge crossing for the entire batch
+- `pyforge_doctor` management command — audits all ModelSerializer classes, reports Rust field ratio and recommendation. Supports `--app`, `--threshold`, `--json` flags
+- `from_dataclass()` and `from_typeddict()` — auto-generate Schema from Python type annotations, supports `Optional`, `Annotated` with constraint markers
+- `PyForgeMetricsMiddleware` — adds `X-PyForge-Stats` response header with rust_fields, python_fields, calls, and milliseconds per request
+- N+1 query detection — warns when ForeignKey fields are not in `select_related` during serialization (DEBUG mode only)
+- `serialize_stream()` — yields serialized chunks from a queryset for `StreamingHttpResponse`, constant memory regardless of queryset size
+- Compile-time schema validation — `Field(int, max_length=100)` raises `SchemaError` at definition time instead of silently ignoring the constraint
+- Benchmark regression CI — GitHub Actions workflow runs benchmarks on PRs touching pyforge-core or pyforge-django
+- Constraint markers for `Annotated`: `MaxLength`, `MinLength`, `MinValue`, `MaxValue`, `MaxDigits`, `DecimalPlaces`
+
+### Performance
+- `serialize_values_list`: 3.5x over DRF for 3,000 records (up from 2.5x with mixin)
+- `RustSerializerMixin` many=True: 2.2x over DRF (cached field classification + DRF bypass)
+- Validate 1,000 instances: 50x over DRF
+
 ## [0.2.0] — 2026-04-05
 
 ### Added
