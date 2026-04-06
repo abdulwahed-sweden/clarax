@@ -33,9 +33,24 @@
 - Any view where `ModelSerializer.data` or `.is_valid()` is the bottleneck
 - ASGI deployments where per-request latency compounds under concurrent load
 
+## clarax-core standalone (dict workloads, no Django)
+
+Measured on 50,000 loan application dicts with 11 fields each (5 str, 3 int, 3 Decimal, 1 bool).
+Pure Python baseline uses manual isinstance/len checks (validation) and `str(v) if isinstance(v, Decimal) else v` (serialization).
+
+| Benchmark | Pure Python | ClaraX | Speedup |
+|---|---|---|---|
+| Serialize 1,000 dicts | 2.1 ms | 1.3 ms | **1.7x** |
+| Serialize 10,000 dicts | 65.8 ms | 38.7 ms | **1.7x** |
+| Serialize 50,000 dicts | 249.9 ms | 166.1 ms | **1.5x** |
+| Validate 1,000 dicts | 1.1 ms | 1.0 ms | **1.0x** |
+| Validate 10,000 dicts | 29.2 ms | 18.3 ms | **1.6x** |
+| Validate 50,000 dicts | 176.8 ms | 122.6 ms | **1.4x** |
+
+**Key optimizations (v0.3.1):** Direct Python→Python serialization skips intermediate Rust allocations for str/int/float/bool fields. Inline validation uses Python `len()` for string length checks instead of extracting full Rust Strings. Pre-interned field name strings avoid repeated Python string creation.
+
 ## When ClaraX does NOT help
 
-- Raw dict comprehensions or `.values()` querysets that bypass DRF entirely
 - Single-record detail endpoints (bridge overhead ~10us per call)
 - Database-bound views — ClaraX does not touch query time
 - Views with complex computed/method fields that must run in Python

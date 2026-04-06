@@ -5,6 +5,21 @@ All notable changes to ClaraX will be documented here.
 Format: [keepachangelog.com](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] — 2026-04-06
+
+### Fixed
+- **clarax-core**: `serialize_many` and `validate_many` now faster than pure Python on dict-based workloads of 1,000+ records
+  - Serialization: direct Python→Python conversion skips intermediate FieldValue/serde_json representations — str/int/float/bool fields pass through with zero Rust allocation
+  - Validation: inline validation from Python objects eliminates FieldValue extraction — string length checked via Python `len()` (O(1)) instead of extracting full Rust String
+  - Pre-interned field name strings avoid repeated Python string creation per record
+  - Eliminated 550K descriptor clones per 50K-record batch (was cloning `FieldDescriptor` including heap-allocated `String` name for every field of every record)
+  - Removed Rayon overhead from validation hot path for dict inputs
+
+### Performance
+- `serialize_many` 50K dicts: **1.5x** faster than pure Python (was 0.3x — 5x improvement)
+- `validate_many` 50K dicts: **1.4x** faster than pure Python (was 0.3x — 4.7x improvement)
+- `validate_many` 1K dicts: **1.0x** parity (was 0.03x due to Rayon thread pool startup)
+
 ## [0.3.0] — 2026-04-05
 
 ### Added

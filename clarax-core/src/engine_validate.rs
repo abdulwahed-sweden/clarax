@@ -35,6 +35,65 @@ impl ValidationReport {
     }
 }
 
+/// Validates a flat buffer of field values against a repeating descriptor pattern.
+///
+/// `values` is laid out as `[rec0_field0, rec0_field1, ..., rec1_field0, ...]`.
+/// The descriptor slice is cycled to match. This avoids cloning descriptors
+/// for every record and enables chunk-based parallelism at the record level.
+pub fn validate_batch_chunked(
+    descriptors: &[FieldDescriptor],
+    values: &[FieldValue],
+) -> ValidationReport {
+    let fields_per_record = descriptors.len();
+    if fields_per_record == 0 || values.is_empty() {
+        return ValidationReport {
+            valid_count: 0,
+            error_count: 0,
+            field_errors: Vec::new(),
+        };
+    }
+
+    let num_records = values.len() / fields_per_record;
+
+    let chunk_errors: Vec<Vec<FieldValidationError>> = if num_records >= PARALLEL_THRESHOLD {
+        values
+            .par_chunks(fields_per_record)
+            .map(|record_values| {
+                let mut errors = Vec::new();
+                for (desc, val) in descriptors.iter().zip(record_values.iter()) {
+                    errors.append(&mut validate_single(desc, val));
+                }
+                errors
+            })
+            .collect()
+    } else {
+        values
+            .chunks(fields_per_record)
+            .map(|record_values| {
+                let mut errors = Vec::new();
+                for (desc, val) in descriptors.iter().zip(record_values.iter()) {
+                    errors.append(&mut validate_single(desc, val));
+                }
+                errors
+            })
+            .collect()
+    };
+
+    let all_errors: Vec<FieldValidationError> =
+        chunk_errors.into_iter().flatten().collect();
+    let entries_with_errors = all_errors
+        .iter()
+        .map(|e| &e.field_name)
+        .collect::<std::collections::HashSet<_>>()
+        .len();
+
+    ValidationReport {
+        valid_count: values.len().saturating_sub(entries_with_errors),
+        error_count: all_errors.len(),
+        field_errors: all_errors,
+    }
+}
+
 /// Validates a batch of (descriptor, value) pairs.
 ///
 /// For batches above `PARALLEL_THRESHOLD`, validation runs in parallel.
@@ -76,7 +135,7 @@ pub fn validate_batch(entries: &[(FieldDescriptor, FieldValue)]) -> ValidationRe
 }
 
 /// Validates a single field value against its descriptor.
-fn validate_single(
+pub fn validate_single(
     descriptor: &FieldDescriptor,
     value: &FieldValue,
 ) -> Vec<FieldValidationError> {

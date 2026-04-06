@@ -15,9 +15,11 @@ pub mod types;
 
 // Re-export public types for downstream crates (clarax-django).
 pub use engine_serialize::{serialize_fields, serialize_rows, SerializedRecord};
-pub use engine_validate::{validate_batch, ValidationReport, PARALLEL_THRESHOLD};
+pub use engine_validate::{validate_batch, validate_batch_chunked, validate_single, ValidationReport, PARALLEL_THRESHOLD};
 pub use error::{CoreError, FieldValidationError};
 pub use types::{FieldDescriptor, FieldType, FieldValue};
+
+use std::collections::HashMap;
 
 use clarax::prelude::*;
 use clarax::types::{PyBool, PyDict, PyFloat, PyInt, PyList, PyString};
@@ -301,7 +303,10 @@ fn serialize<'py>(
 
 /// Serializes a list of dicts or objects using a precompiled schema.
 ///
-/// Returns a list of dicts.
+/// Returns a list of dicts. Uses a fast path for dict inputs that skips
+/// intermediate FieldValue/serde_json representations — directly copies
+/// Python references for str/int/float/bool and only converts
+/// Decimal/UUID/datetime fields.
 #[pyfunction]
 fn serialize_many<'py>(
     py: Python<'py>,
@@ -309,9 +314,63 @@ fn serialize_many<'py>(
     schema: &Schema,
 ) -> PyResult<Bound<'py, PyList>> {
     let result = PyList::empty(py);
+
+    // Pre-intern field name strings — reused for every record's get_item/set_item
+    let py_names: Vec<Bound<'_, PyString>> = schema
+        .field_names
+        .iter()
+        .map(|n| PyString::intern(py, n))
+        .collect();
+
     for item in data_list.iter() {
-        let dict = serialize(py, &item, schema)?;
-        result.append(dict)?;
+        if let Ok(input_dict) = item.cast::<PyDict>() {
+            let output = PyDict::new(py);
+            for (i, desc) in schema.descriptors.iter().enumerate() {
+                let key = &py_names[i];
+                let py_val = input_dict.get_item(key)?;
+                let py_val = match py_val {
+                    Some(v) if !v.is_none() => v,
+                    _ => {
+                        if desc.nullable || desc.has_default {
+                            output.set_item(key, py.None())?;
+                            continue;
+                        }
+                        return Err(CoreError::NullField {
+                            field: desc.name.clone(),
+                        }
+                        .into());
+                    }
+                };
+                // Fast path: for most types, pass the Python object through directly.
+                // Only Decimal/UUID/datetime need conversion.
+                match &desc.field_type {
+                    FieldType::Str { .. }
+                    | FieldType::Int { .. }
+                    | FieldType::Float { .. }
+                    | FieldType::Bool
+                    | FieldType::List
+                    | FieldType::Dict => {
+                        output.set_item(key, &py_val)?;
+                    }
+                    FieldType::Decimal { .. } | FieldType::Uuid => {
+                        output.set_item(key, py_val.str()?)?;
+                    }
+                    FieldType::DateTime | FieldType::Date | FieldType::Time => {
+                        output.set_item(key, py_val.call_method0("isoformat")?)?;
+                    }
+                    FieldType::Bytes { .. } => {
+                        let base64_mod = py.import("base64")?;
+                        let encoded = base64_mod.call_method1("b64encode", (&py_val,))?;
+                        output.set_item(key, encoded.call_method1("decode", ("ascii",))?)?;
+                    }
+                }
+            }
+            result.append(output)?;
+        } else {
+            // Fallback for non-dict objects (attribute access path)
+            let dict = serialize(py, &item, schema)?;
+            result.append(dict)?;
+        }
     }
     Ok(result)
 }
@@ -336,22 +395,340 @@ fn validate<'py>(
 
 /// Validates a list of dicts or objects against a schema.
 ///
-/// Returns a combined validation report.
+/// Returns a combined validation report. For dict inputs, validates inline
+/// without creating intermediate FieldValue representations — avoids heap
+/// allocations for str fields (uses Python `len()` directly) and skips
+/// extraction entirely for bool fields (type check only).
 #[pyfunction]
 fn validate_many<'py>(
     py: Python<'py>,
     data_list: &Bound<'py, PyList>,
     schema: &Schema,
 ) -> PyResult<Bound<'py, PyDict>> {
-    let mut all_entries = Vec::new();
+    let num_fields = schema.descriptors.len();
+    let num_records = data_list.len();
+    let total_fields = num_records * num_fields;
+
+    // Pre-intern field name strings for fast dict lookup
+    let py_names: Vec<Bound<'_, PyString>> = schema
+        .field_names
+        .iter()
+        .map(|n| PyString::intern(py, n))
+        .collect();
+
+    let mut all_errors: Vec<FieldValidationError> = Vec::new();
+
     for item in data_list.iter() {
-        for desc in &schema.descriptors {
-            let fv = extract_single_value(py, &item, desc)?;
-            all_entries.push((desc.clone(), fv));
+        if let Ok(input_dict) = item.cast::<PyDict>() {
+            for (i, desc) in schema.descriptors.iter().enumerate() {
+                let py_val = input_dict.get_item(&py_names[i])?;
+                let py_val = match py_val {
+                    Some(v) if !v.is_none() => v,
+                    _ => {
+                        if !desc.nullable && !desc.has_default {
+                            all_errors.push(FieldValidationError {
+                                field_name: desc.name.clone(),
+                                message: "This field is required.".into(),
+                                code: "required".into(),
+                                params: HashMap::new(),
+                            });
+                        }
+                        continue;
+                    }
+                };
+                validate_py_value_inline(&py_val, desc, &mut all_errors);
+            }
+        } else {
+            // Fallback: extract to FieldValue for non-dict objects
+            for desc in &schema.descriptors {
+                let fv = extract_single_value(py, &item, desc)?;
+                all_errors.extend(validate_single(desc, &fv));
+            }
         }
     }
-    let report = validate_batch(&all_entries);
+
+    let entries_with_errors = all_errors
+        .iter()
+        .map(|e| &e.field_name)
+        .collect::<std::collections::HashSet<_>>()
+        .len();
+
+    let report = ValidationReport {
+        valid_count: total_fields.saturating_sub(entries_with_errors),
+        error_count: all_errors.len(),
+        field_errors: all_errors,
+    };
     report_to_pydict(py, &report)
+}
+
+/// Validates a Python value directly against a field descriptor without
+/// creating an intermediate `FieldValue`.
+///
+/// For str fields: calls Python `len()` (O(1) in CPython) instead of
+/// extracting a full Rust String. For bool: type-checks without extraction.
+/// For int/float: extracts the primitive (cheap, no heap allocation).
+fn validate_py_value_inline(
+    val: &Bound<'_, PyAny>,
+    desc: &FieldDescriptor,
+    errors: &mut Vec<FieldValidationError>,
+) {
+    match &desc.field_type {
+        FieldType::Str { max_length, min_length } => {
+            // Python str.__len__() returns character (code point) count — O(1) in CPython.
+            // This avoids extracting a full Rust String just to count characters.
+            let char_count = match val.len() {
+                Ok(n) => n,
+                Err(_) => {
+                    errors.push(FieldValidationError {
+                        field_name: desc.name.clone(),
+                        message: "Invalid type: expected str.".into(),
+                        code: "invalid".into(),
+                        params: HashMap::new(),
+                    });
+                    return;
+                }
+            };
+            if let Some(max) = max_length {
+                if char_count > *max {
+                    errors.push(FieldValidationError {
+                        field_name: desc.name.clone(),
+                        message: format!(
+                            "Ensure this value has at most {max} characters (it has {char_count})."
+                        ),
+                        code: "max_length".into(),
+                        params: HashMap::from([
+                            ("max_length".into(), max.to_string()),
+                            ("length".into(), char_count.to_string()),
+                        ]),
+                    });
+                }
+            }
+            if let Some(min) = min_length {
+                if char_count < *min {
+                    errors.push(FieldValidationError {
+                        field_name: desc.name.clone(),
+                        message: format!(
+                            "Ensure this value has at least {min} characters (it has {char_count})."
+                        ),
+                        code: "min_length".into(),
+                        params: HashMap::from([
+                            ("min_length".into(), min.to_string()),
+                            ("length".into(), char_count.to_string()),
+                        ]),
+                    });
+                }
+            }
+        }
+        FieldType::Int { min_value, max_value } => {
+            let n: i64 = match val.extract() {
+                Ok(v) => v,
+                Err(_) => {
+                    errors.push(FieldValidationError {
+                        field_name: desc.name.clone(),
+                        message: "Invalid type: expected int.".into(),
+                        code: "invalid".into(),
+                        params: HashMap::new(),
+                    });
+                    return;
+                }
+            };
+            if let Some(min) = min_value {
+                if n < *min {
+                    errors.push(FieldValidationError {
+                        field_name: desc.name.clone(),
+                        message: format!("Ensure this value is greater than or equal to {min}."),
+                        code: "min_value".into(),
+                        params: HashMap::from([("min_value".into(), min.to_string())]),
+                    });
+                }
+            }
+            if let Some(max) = max_value {
+                if n > *max {
+                    errors.push(FieldValidationError {
+                        field_name: desc.name.clone(),
+                        message: format!("Ensure this value is less than or equal to {max}."),
+                        code: "max_value".into(),
+                        params: HashMap::from([("max_value".into(), max.to_string())]),
+                    });
+                }
+            }
+        }
+        FieldType::Float { min_value, max_value } => {
+            let f: f64 = match val.extract() {
+                Ok(v) => v,
+                Err(_) => {
+                    errors.push(FieldValidationError {
+                        field_name: desc.name.clone(),
+                        message: "Invalid type: expected float.".into(),
+                        code: "invalid".into(),
+                        params: HashMap::new(),
+                    });
+                    return;
+                }
+            };
+            if let Some(min) = min_value {
+                if f < *min {
+                    errors.push(FieldValidationError {
+                        field_name: desc.name.clone(),
+                        message: format!("Ensure this value is greater than or equal to {min}."),
+                        code: "min_value".into(),
+                        params: HashMap::from([("min_value".into(), min.to_string())]),
+                    });
+                }
+            }
+            if let Some(max) = max_value {
+                if f > *max {
+                    errors.push(FieldValidationError {
+                        field_name: desc.name.clone(),
+                        message: format!("Ensure this value is less than or equal to {max}."),
+                        code: "max_value".into(),
+                        params: HashMap::from([("max_value".into(), max.to_string())]),
+                    });
+                }
+            }
+        }
+        FieldType::Bool => {
+            // Type check only — no extraction needed
+            if !val.is_instance_of::<PyBool>() {
+                errors.push(FieldValidationError {
+                    field_name: desc.name.clone(),
+                    message: "Invalid type: expected bool.".into(),
+                    code: "invalid".into(),
+                    params: HashMap::new(),
+                });
+            }
+        }
+        FieldType::Decimal { max_digits, decimal_places } => {
+            let s: String = match val.str().and_then(|s| s.extract()) {
+                Ok(v) => v,
+                Err(_) => {
+                    errors.push(FieldValidationError {
+                        field_name: desc.name.clone(),
+                        message: "Invalid type: expected Decimal.".into(),
+                        code: "invalid".into(),
+                        params: HashMap::new(),
+                    });
+                    return;
+                }
+            };
+            let d = match Decimal::from_str_exact(&s) {
+                Ok(v) => v,
+                Err(_) => {
+                    errors.push(FieldValidationError {
+                        field_name: desc.name.clone(),
+                        message: "Invalid type: expected Decimal.".into(),
+                        code: "invalid".into(),
+                        params: HashMap::new(),
+                    });
+                    return;
+                }
+            };
+            let mantissa_abs = d.mantissa().unsigned_abs();
+            let total_digits = if mantissa_abs == 0 { 1u32 } else { mantissa_abs.ilog10() + 1 };
+            let scale = d.scale();
+            if let Some(max_d) = max_digits {
+                if total_digits > *max_d {
+                    errors.push(FieldValidationError {
+                        field_name: desc.name.clone(),
+                        message: format!(
+                            "Ensure that there are no more than {max_d} digits in total."
+                        ),
+                        code: "max_digits".into(),
+                        params: HashMap::from([("max_digits".into(), max_d.to_string())]),
+                    });
+                }
+            }
+            if let Some(dp) = decimal_places {
+                if scale > *dp {
+                    errors.push(FieldValidationError {
+                        field_name: desc.name.clone(),
+                        message: format!(
+                            "Ensure that there are no more than {dp} decimal places."
+                        ),
+                        code: "max_decimal_places".into(),
+                        params: HashMap::from([("decimal_places".into(), dp.to_string())]),
+                    });
+                }
+            }
+        }
+        FieldType::DateTime | FieldType::Date | FieldType::Time => {
+            // Type check via isoformat() — if it has the method, it's the right type
+            if val.call_method0("isoformat").is_err() {
+                errors.push(FieldValidationError {
+                    field_name: desc.name.clone(),
+                    message: format!("Invalid type: expected {}.", desc.field_type.type_name()),
+                    code: "invalid".into(),
+                    params: HashMap::new(),
+                });
+            }
+        }
+        FieldType::Uuid => {
+            // Just verify it can be stringified as a UUID
+            if let Ok(s) = val.str().and_then(|s| s.extract::<String>()) {
+                if Uuid::parse_str(&s).is_err() {
+                    errors.push(FieldValidationError {
+                        field_name: desc.name.clone(),
+                        message: "Invalid type: expected UUID.".into(),
+                        code: "invalid".into(),
+                        params: HashMap::new(),
+                    });
+                }
+            } else {
+                errors.push(FieldValidationError {
+                    field_name: desc.name.clone(),
+                    message: "Invalid type: expected UUID.".into(),
+                    code: "invalid".into(),
+                    params: HashMap::new(),
+                });
+            }
+        }
+        FieldType::List => {
+            if !val.is_instance_of::<PyList>() {
+                errors.push(FieldValidationError {
+                    field_name: desc.name.clone(),
+                    message: "Expected a list.".into(),
+                    code: "invalid".into(),
+                    params: HashMap::new(),
+                });
+            }
+        }
+        FieldType::Dict => {
+            if !val.is_instance_of::<PyDict>() {
+                errors.push(FieldValidationError {
+                    field_name: desc.name.clone(),
+                    message: "Expected a dict.".into(),
+                    code: "invalid".into(),
+                    params: HashMap::new(),
+                });
+            }
+        }
+        FieldType::Bytes { max_length } => {
+            match val.len() {
+                Ok(byte_len) => {
+                    if let Some(max) = max_length {
+                        if byte_len > *max {
+                            errors.push(FieldValidationError {
+                                field_name: desc.name.clone(),
+                                message: format!(
+                                    "Ensure this value has at most {max} bytes (it has {byte_len})."
+                                ),
+                                code: "max_length".into(),
+                                params: HashMap::from([("max_length".into(), max.to_string())]),
+                            });
+                        }
+                    }
+                }
+                Err(_) => {
+                    errors.push(FieldValidationError {
+                        field_name: desc.name.clone(),
+                        message: "Invalid type: expected bytes.".into(),
+                        code: "invalid".into(),
+                        params: HashMap::new(),
+                    });
+                }
+            }
+        }
+    }
 }
 
 /// Returns the clarax-core version string.
