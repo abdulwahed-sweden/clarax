@@ -5,6 +5,16 @@ All notable changes to ClaraX will be documented here.
 Format: [keepachangelog.com](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] — 2026-04-06
+
+### Fixed
+- Re-published to PyPI after version cleanup (PyPI does not allow re-uploading deleted filenames)
+- All documentation updated: BENCHMARKS.md, UPGRADING.md, CLARAX_ROADMAP.md, CLARAX_CORE_PLAN.md
+- README rewritten as developer story with clear "when to use" guidance
+
+### Note
+- Functionally identical to 1.0.0. Version bump required by PyPI policy.
+
 ## [1.0.0] — 2026-04-06
 
 ### Changed
