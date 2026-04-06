@@ -3,9 +3,14 @@
 </p>
 
 <p align="center">
-  <a href="https://pypi.org/project/clarax-django"><img src="https://img.shields.io/pypi/v/clarax-django.svg" alt="PyPI"></a>
-  <a href="https://pypi.org/project/clarax-core"><img src="https://img.shields.io/pypi/v/clarax-core.svg" alt="PyPI core"></a>
-  <a href="LICENSE-MIT"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT"></a>
+  <a href="https://pypi.org/project/clarax-django"><img src="https://img.shields.io/pypi/v/clarax-django?label=clarax-django&color=blue" alt="clarax-django on PyPI"></a>
+  <a href="https://pypi.org/project/clarax-core"><img src="https://img.shields.io/pypi/v/clarax-core?label=clarax-core&color=blue" alt="clarax-core on PyPI"></a>
+  <a href="https://crates.io/crates/clarax-core"><img src="https://img.shields.io/crates/v/clarax-core?label=crates.io&color=orange" alt="clarax-core on crates.io"></a>
+  <br>
+  <a href="https://www.python.org"><img src="https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white" alt="Python 3.11+"></a>
+  <a href="https://www.djangoproject.com"><img src="https://img.shields.io/badge/django-4.2%2B-092E20?logo=django&logoColor=white" alt="Django 4.2+"></a>
+  <a href="LICENSE-MIT"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License"></a>
+  <a href="https://github.com/abdulwahed-sweden/clarax/releases"><img src="https://img.shields.io/github/v/release/abdulwahed-sweden/clarax?label=release&color=brightgreen" alt="GitHub Release"></a>
 </p>
 
 ---
