@@ -1,34 +1,78 @@
-target
+# ──────────────────────────────────────────────
+#  ClaraX .gitignore
+#  Rust + Python (PyO3) project
+# ──────────────────────────────────────────────
+
+# ── Rust / Cargo ──────────────────────────────
+target/
 Cargo.lock
-/doc
-/gh-pages
-build/
-*.py[co]
+*.so
+*.dylib
+*.dll
+*.pyd
+
+# ── Python ────────────────────────────────────
 __pycache__/
-.cache
-.pytest_cache/
+*.py[cod]
+*.egg
+*.egg-info/
 dist/
+build/
+wheels/
+pip-wheel-metadata/
+*.whl
+
+# ── Virtual environments ──────────────────────
+.venv/
+venv*/
+.nox/
 .tox/
-.mypy_cache/
+
+# ── Testing & coverage ───────────────────────
+.pytest_cache/
 .hypothesis/
-.eggs/
-venv*
+htmlcov/
+lcov.info
+coverage.json
+coverage.xml
+.coverage
+*.gcda
+*.gcno
+
+# ── Type checking & linting ──────────────────
+.mypy_cache/
+.ruff_cache/
+.cache/
+
+# ── Secrets & environment ────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── OS artifacts ─────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Editors & IDEs ───────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Documentation build ─────────────────────
+/doc/
+/gh-pages/
 guide/book/
 guide/src/LICENSE-APACHE
 guide/src/LICENSE-MIT
-*.so
-*.out
-*.egg-info
-extensions/stamps/
-pip-wheel-metadata
-valgrind-python.supp
-*.pyd
-lcov.info
-coverage.json
 netlify_build/
-.nox/
-.vscode/
 .lycheecache
-.DS_Store
-.venv/
-.env
+site/
+
+# ── Misc ─────────────────────────────────────
+.eggs/
+extensions/stamps/
+valgrind-python.supp
+*.out
