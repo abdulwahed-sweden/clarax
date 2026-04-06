@@ -16,7 +16,7 @@ clarax-build-config = { path = "../clarax-build-config" }
 codspeed-criterion-compat = "4.0"
 criterion = "0.8.0"
 num-bigint = "0.4.3"
-rust_decimal = { version = "1.0.0", default-features = false }
+rust_decimal = { version = "1.15", default-features = false }
 hashbrown = "0.16"
 
 [features]

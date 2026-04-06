@@ -5,6 +5,32 @@ All notable changes to ClaraX will be documented here.
 Format: [keepachangelog.com](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] — 2026-04-06
+
+### Changed
+- **Version bump to 1.0.0** — ClaraX is production-ready
+- Development Status upgraded from Alpha to Production/Stable
+
+### Added
+- **Python 3.14 free-threading support** — ClaraX wheels build and run on `python3.14t` (no-GIL) with zero code changes. Rayon parallel operations use all CPU cores with zero GIL contention.
+- **Batch validation functions** for workloads where Rust dominates Python:
+  - `validate_names_batch()` — parallel character scanning (9x over Python)
+  - `validate_ids_batch()` — zero-copy pattern matching (15x over Python)
+  - `compute_risk_batch()` — parallel float math with Rayon (3.7x over Python)
+  - `batch_stats()` — parallel statistics: mean, median, stdev (20x over Python)
+- **"When to Use ClaraX" guide** in README — clear guidance on which Django workloads benefit
+
+### Performance (clarax-core, 50K records)
+- `serialize_many`: 2.2x over pure Python (dict.copy + selective overwrite)
+- `validate_names_batch`: 9.1x over pure Python (Rayon parallel char scanning)
+- `validate_ids_batch`: 15.5x over pure Python (zero-copy pattern matching)
+- `batch_stats`: 20.8x over pure Python (parallel reduce + sort)
+- Full application validation: 5.7x combined speedup
+
+### Performance (clarax-django, QueueEntry x500)
+- `RustSerializerMixin`: 2.2x over pure DRF ModelSerializer
+- `serialize_batch()`: 2.7x over pure DRF ModelSerializer
+
 ## [0.3.1] — 2026-04-06
 
 ### Fixed

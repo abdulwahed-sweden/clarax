@@ -5,19 +5,20 @@ build-backend = "maturin"
 
 [project]
 name = "clarax-core"
-version = "0.3.1"
+version = "1.0.0"
 description = "Rust-accelerated serialization and validation for Python — framework-agnostic"
 readme = "README.md"
 authors = [{ name = "Abdulwahed Mansour" }]
 license = { text = "MIT" }
 requires-python = ">=3.11"
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Rust",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]

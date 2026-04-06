@@ -5,14 +5,14 @@ build-backend = "maturin"
 
 [project]
 name = "clarax-django"
-version = "0.3.0"
+version = "1.0.0"
 description = "Rust-accelerated Django serialization, validation, and field mapping"
 readme = "README.md"
 authors = [{ name = "Abdulwahed Mansour" }]
 license = { text = "MIT" }
 requires-python = ">=3.11"
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Framework :: Django",
     "Framework :: Django :: 4.2",
     "Framework :: Django :: 5.0",
@@ -22,6 +22,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Rust",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]

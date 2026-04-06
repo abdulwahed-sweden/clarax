@@ -1,6 +1,6 @@
 [package]
 name = "clarax-introspection"
-version = "0.3.0"
+version = "1.0.0"
 description = "Introspect dynamic libraries built with ClaraX to extract Python type metadata"
 authors = ["Abdulwahed Mansour"]
 homepage = "https://github.com/abdulwahed-sweden/clarax"
