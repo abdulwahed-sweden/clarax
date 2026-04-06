@@ -1,7 +1,7 @@
 [project]
 requires-python = ">=3.11"
 name = "clarax"
-version = "1.0.0"
+version = "1.0.1"
 description = "High-performance Rust-Python bindings for Django 5.x"
 authors = [{name = "Abdulwahed Mansour"}]
 license = {text = "MIT"}

@@ -1,6 +1,6 @@
 [package]
 name = "clarax-ffi"
-version = "1.0.0"
+version = "1.0.1"
 description = "CPython 3.11+ C-API bindings for the ClaraX ecosystem"
 authors = ["Abdulwahed Mansour"]
 keywords = ["clarax", "python", "cpython", "ffi"]
@@ -32,7 +32,7 @@ abi3-py314 = ["abi3", "clarax-build-config/abi3-py314"]
 paste = "1"
 
 [build-dependencies]
-clarax-build-config = { path = "../clarax-build-config", version = "=1.0.0", features = ["resolve-config"] }
+clarax-build-config = { path = "../clarax-build-config", version = "=1.0.1", features = ["resolve-config"] }
 
 [lints]
 workspace = true

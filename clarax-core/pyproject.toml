@@ -5,7 +5,7 @@ build-backend = "maturin"
 
 [project]
 name = "clarax-core"
-version = "1.0.0"
+version = "1.0.1"
 description = "Rust-accelerated serialization and validation for Python — framework-agnostic"
 readme = "README.md"
 authors = [{ name = "Abdulwahed Mansour" }]

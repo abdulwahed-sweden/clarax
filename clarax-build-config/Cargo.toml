@@ -1,6 +1,6 @@
 [package]
 name = "clarax-build-config"
-version = "1.0.0"
+version = "1.0.1"
 description = "Build configuration for the ClaraX ecosystem — CPython 3.11+ only"
 authors = ["Abdulwahed Mansour"]
 keywords = ["clarax", "python", "cpython", "build"]

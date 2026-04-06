@@ -1,6 +1,6 @@
 [package]
 name = "clarax-macros"
-version = "1.0.0"
+version = "1.0.1"
 description = "Proc macros for ClaraX — modern Python-Rust bindings"
 authors = ["Abdulwahed Mansour"]
 keywords = ["clarax", "python", "cpython", "ffi"]
@@ -23,7 +23,7 @@ experimental-inspect = ["clarax-macros-backend/experimental-inspect"]
 proc-macro2 = { version = "1.0.60", default-features = false }
 quote = "1"
 syn = { version = "2", features = ["full", "extra-traits"] }
-clarax-macros-backend = { path = "../clarax-macros-backend", version = "=1.0.0" }
+clarax-macros-backend = { path = "../clarax-macros-backend", version = "=1.0.1" }
 
 [lints]
 workspace = true
