@@ -19,6 +19,10 @@ from clarax_core._native import (
     serialize_many,
     validate,
     validate_many,
+    validate_names_batch,
+    validate_ids_batch,
+    compute_risk_batch,
+    batch_stats,
     version,
 )
 
@@ -39,6 +43,10 @@ __all__ = [
     "serialize_many",
     "validate",
     "validate_many",
+    "validate_names_batch",
+    "validate_ids_batch",
+    "compute_risk_batch",
+    "batch_stats",
     "version",
     "from_dataclass",
     "from_typeddict",
